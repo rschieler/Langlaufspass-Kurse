@@ -1,7 +1,9 @@
 // Service Worker: macht die App installierbar und startet sie auch ohne Netz.
 // Eigene Dateien: zuerst vom Netz (immer aktuell), bei Funkloch aus dem Zwischenspeicher.
 // Die Daten selbst hält Firestore offline vor.
-const CACHE = 'llkurse-v1';
+// Test und Produktiv liegen auf derselben Domain: Cache-Namen pro Pfad trennen.
+const PREFIX = 'llk' + new URL(self.registration.scope).pathname;
+const CACHE = PREFIX + 'v1';
 const SHELL = ['./', 'index.html', 'config.js', 'firebase.js', 'jspdf.min.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -9,7 +11,7 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith(PREFIX) && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', e => {

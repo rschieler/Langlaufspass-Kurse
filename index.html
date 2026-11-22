@@ -160,6 +160,8 @@ nav.tabs svg{width:24px;height:24px}
 .fab[hidden]{display:none}
 .toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;max-width:min(90vw,420px);font-weight:500;text-align:center}
 .toast[hidden]{display:none}
+.env-test{--sky:#b3261e;--sky2:#d9655c}
+.envtag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:6px;background:#fff;color:#b3261e;font-size:14px;letter-spacing:.04em;vertical-align:2px}
 @media (max-width:380px){.tm{font-size:26px}.figs b{font-size:28px}}
 </style>
 </head>
@@ -195,6 +197,8 @@ const MO=['Jan.','Feb.','März','Apr.','Mai','Juni','Juli','Aug.','Sept.','Okt.'
 const MOL=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const S={kunden:[],lektionen:[],kurse:[],ausgaben:[],cfg:{...DEF},view:'heute',cal:null,sel:null,year:new Date().getFullYear(),q:'',sheet:null,back:null,confirm:null,open:{},mode:'laden',drawn:null,user:undefined,unsubs:[]};
 let db=null,dl=null,loadT=null,FB=null;
+const ENV=window.APP_ENV==='test'?'test':'prod';
+if(ENV==='test'){document.documentElement.classList.add('env-test');document.title='LL-Kurse TEST';document.querySelector('meta[name=theme-color]')?.setAttribute('content','#b3261e')}
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const enc=encodeURIComponent;
@@ -261,7 +265,7 @@ const ausgabenY=y=>S.ausgaben.filter(a=>(a.datum||'').startsWith(String(y))).sor
 const groupSum=(arr,key,keys)=>{const m={};keys.forEach(k=>m[k]=0);arr.forEach(x=>{const k=x[key]||'Diverses';m[k]=(m[k]||0)+(+x.betrag||0)});return Object.entries(m).filter(([,v])=>v)};
 
 /* ---------- Bausteine ---------- */
-const band=(title,sub,figs)=>`<header class="band"><div class="band-in"><div class="top"><span class="brand cond">Langlaufspass</span>${S.user?`<button class="gear" type="button" data-act="settings" aria-label="Einstellungen">${GEAR}</button>`:''}</div><h1>${esc(title)}</h1>${sub?`<p class="sub" id="bsub">${esc(sub)}</p>`:''}${figs?`<div class="figs">${figs.map(f=>`<div class="${f[2]?'pk':''}"><b class="cond">${f[0]}</b><span>${f[1]}</span></div>`).join('')}</div>`:''}</div>${RIDGE}</header>`;
+const band=(title,sub,figs)=>`<header class="band"><div class="band-in"><div class="top"><span class="brand cond">Langlaufspass${ENV==='test'?'<span class="envtag">TEST</span>':''}</span>${S.user?`<button class="gear" type="button" data-act="settings" aria-label="Einstellungen">${GEAR}</button>`:''}</div><h1>${esc(title)}</h1>${sub?`<p class="sub" id="bsub">${esc(sub)}</p>`:''}${figs?`<div class="figs">${figs.map(f=>`<div class="${f[2]?'pk':''}"><b class="cond">${f[0]}</b><span>${f[1]}</span></div>`).join('')}</div>`:''}</div>${RIDGE}</header>`;
 const empty=t=>`<p class="empty">${S.mode==='laden'?'Daten werden geladen …':t}</p>`;
 function statusNote(){if(S.mode==='fehler')return `<div class="note"><p style="margin:0 0 8px">Kein Zugriff auf die Daten mit <b>${esc(S.user?.email||'')}</b>. Diese Adresse ist in den Firestore-Regeln nicht freigeschaltet.</p><button class="btn" type="button" data-act="logout">Mit anderem Konto anmelden</button></div>`;
   const m={langsam:'Keine Verbindung: Du siehst den zuletzt gespeicherten Stand. Änderungen werden übertragen, sobald wieder Netz da ist.'}[S.mode];return m?`<p class="note">${m}</p>`:''}
@@ -392,6 +396,7 @@ function fmS(){const c=S.cfg,i=(n,l,t='text',x='')=>`<label class="f">${l}<input
   <p class="hint">Platzhalter in Nachrichten: {name} {datum} {zeit} {dauer} {treffpunkt} {absender}</p>
   ${ta('tplOk','Nachricht Bestätigung')}${ta('tplErin','Nachricht Erinnerung')}${ta('tplAbs','Nachricht Absage')}${saveRow}</form>
   <section class="s"><h3>Datensicherung</h3>${dl?`<button class="btn" type="button" data-act="backup">Alle Daten sichern (JSON)</button>`:''}<p class="hint">${S.kunden.length} Kunden, ${S.lektionen.length} Lektionen, ${S.kurse.length} Gruppenkurse, ${S.ausgaben.length} Ausgaben, gespeichert in Firebase und auch offline auf diesem Gerät verfügbar.</p></section>
+  ${ENV==='test'?`<section class="s"><h3>Testumgebung</h3><p class="hint" style="margin:0 0 8px">Eigene Testdatenbank, getrennt von den echten Daten.</p><div class="row"><button class="btn" type="button" data-act="seed">Testdaten laden</button><button class="btn danger" type="button" data-act="wipe">Alle Testdaten löschen</button></div></section>`:''}
   <section class="s"><h3>Konto</h3><p style="margin:0 0 8px">Angemeldet als <b>${esc(S.user?.email||'')}</b></p><button class="btn" type="button" data-act="logout">Abmelden</button></section>`}
 function recalc(f){if(f.dataset.manual)return;const p=+f.elements.personen.value||1;const b=f.dataset.form==='T'?(+f.dataset.preis||0)*p:calcB(+f.elements.dauer.value||1,p);f.elements.betrag.value=b.toFixed(2)}
 const F={};
@@ -441,6 +446,14 @@ async function importVcf(file){if(!file)return;const txt=(await file.text()).rep
   const val=(c,key)=>{const m=c.match(new RegExp('^(?:[\\w-]+\\.)?'+key+'([;:][^\\n]*)$','im'));if(!m)return '';const s=m[1],i=s.indexOf(':');let v=s.slice(i+1).trim();if(/QUOTED-PRINTABLE/i.test(s.slice(0,i))){try{v=decodeURIComponent(v.replace(/=([0-9A-F]{2})/gi,'%$1'))}catch(e){}}return v.replace(/\\,/g,',').replace(/\\;/g,';')};
   const list=cards.map(c=>{let name=val(c,'FN');if(!name){const p=val(c,'N').split(';');name=[p[1],p[0]].filter(Boolean).join(' ')}return {name:name.trim(),tel:val(c,'TEL'),email:val(c,'EMAIL'),ort:(val(c,'ADR').split(';')[3]||'').trim()}});
   await addMany(list)}
+
+async function seedTest(){const t=today(),d=n=>addD(t,n),k=[['Familie Meier','079 555 01 01','Flums','Einsteiger','Klassisch','2 Kinder, Mietmaterial'],['Sandra Keller','078 555 02 02','Walenstadt','Fortgeschritten','Skating',''],['Peter Gruber','076 555 03 03','Mels','Sportlich','Skating',''],['Anna Bossart','079 555 04 04','Sargans','Einsteiger','Beides','']].map(([name,tel,ort,niveau,technik,notiz])=>({id:uid(),name:name+' (Test)',tel,email:'',ort,niveau,technik,notiz,erstellt:t}));
+  for(const x of k)await put('kunden',x);
+  const L=[[0,0,'10:00',1.5,3,'geplant',0],[1,0,'14:00',1,1,'geplant',0],[2,-3,'09:30',1,1,'durchgeführt','TWINT'],[3,-1,'11:00',2,2,'durchgeführt',0],[1,3,'15:00',1,1,'geplant',0],[0,-10,'10:00',1,2,'durchgeführt','Bar']];
+  for(const [ki,off,zeit,dauer,personen,status,za] of L)await put('lektionen',{id:uid(),kundeId:k[ki].id,datum:d(off),zeit,dauer,personen,betrag:calcB(dauer,personen),treffpunkt:'',notiz:'',status,bezahlt:!!za,zahlart:za||'',bezahltAm:za?d(off):''});
+  await put('kurse',{id:uid(),titel:'Skating für Einsteiger (Test)',preis:180,max:6,treffpunkt:'',notiz:'',termine:[2,9,16].map(n=>({datum:d(n),zeit:'18:30',dauer:1.5,da:[]})),teilnehmer:[{kundeId:k[2].id,personen:1,betrag:180,bezahlt:true,zahlart:'Überweisung',bezahltAm:d(-2),warte:false},{kundeId:k[3].id,personen:2,betrag:360,bezahlt:false,zahlart:'',bezahltAm:'',warte:false}]});
+  await put('ausgaben',{id:uid(),datum:d(-5),betrag:48.5,kategorie:'Material & Wachs',text:'Gleitwachs (Test)'});
+  await put('ausgaben',{id:uid(),datum:d(-2),betrag:22,kategorie:'Fahrtkosten',text:'Fahrt Flums – Tannenboden (Test)'})}
 
 /* ---------- Oberfläche ---------- */
 function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(e._t);e._t=setTimeout(()=>e.hidden=true,2800)}
@@ -503,6 +516,8 @@ const A={
   pdf:()=>{if(!window.jspdf){toast('PDF-Modul nicht geladen');return}offer(`Abrechnung_${fnSafe(S.cfg.firma)}_${S.year}.pdf`,pdfAbr(S.year))},
   csvE:()=>offer(`Einnahmen_${S.year}.csv`,csv([['Zahlungsdatum','Kunde','Leistung','Zahlungsart','Betrag CHF'],...einnahmen(S.year).map(r=>[fDs(r.datum),r.kunde,r.leistung,r.zahlart,r.betrag.toFixed(2)])])),
   csvA:()=>offer(`Ausgaben_${S.year}.csv`,csv([['Datum','Kategorie','Beschreibung','Betrag CHF'],...ausgabenY(S.year).map(a=>[fDs(a.datum),a.kategorie,a.text,(+a.betrag||0).toFixed(2)])])),
+  seed:async()=>{if(ENV!=='test')return;closeSheet();await seedTest();toast('Testdaten geladen')},
+  wipe:()=>{if(ENV!=='test')return;ask('Alle Testdaten löschen?','Alles löschen',async()=>{for(const c of ['kunden','lektionen','kurse','ausgaben'])for(const x of [...S[c]])await drop(c,x.id);toast('Testdaten gelöscht')})},
   backup:()=>offer(`Langlaufspass_Sicherung_${today()}.json`,JSON.stringify({exportiert:new Date().toISOString(),config:S.cfg,kunden:S.kunden,lektionen:S.lektionen,kurse:S.kurse,ausgaben:S.ausgaben},null,1))
 };
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const f=A[b.dataset.act];if(f){e.preventDefault();f(b)}});

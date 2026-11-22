@@ -1,5 +1,6 @@
-// Zugangsdaten des Firebase-Projekts «Langlaufspass-Kurse» (langlaufspass-b5289).
-// Diese Werte sind nicht geheim; geschützt werden die Daten durch die Regeln in firestore.rules.
+// PRODUKTIV – Firebase-Projekt «Langlaufspass-Kurse» (langlaufspass-b5289).
+// Diese Werte sind nicht geheim; geschützt werden die Daten durch die Firestore-Regeln.
+window.APP_ENV = 'prod';
 window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyCr6Q4ePs64qpCaiCyDzsf2KLh3Z9Ih-oY",
   authDomain: "langlaufspass-b5289.firebaseapp.com",
